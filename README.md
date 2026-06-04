@@ -25,6 +25,7 @@ app/
   main.py              App factory
 alembic/               Migrations
 tests/                 Pytest suite (uses a separate Postgres DB)
+data/                  Historical CSVs provided with the challenge
 infra/terraform/       Azure infrastructure as code
 .github/workflows/     CI (tests) and CD (build, migrate, deploy)
 Dockerfile             Multi-stage image for the API
@@ -111,11 +112,12 @@ curl -X POST http://localhost:8000/departments \
   -d '[{"id":1,"department":"Engineering"},{"id":2,"department":"Sales"}]'
 ```
 
-CSV upload:
+CSV upload (the historical files provided with the challenge are committed under `data/`):
 
 ```bash
-curl -X POST http://localhost:8000/load/departments \
-  -F "file=@data/departments.csv"
+curl -X POST http://localhost:8000/load/departments     -F "file=@data/departments.csv"
+curl -X POST http://localhost:8000/load/jobs            -F "file=@data/jobs.csv"
+curl -X POST http://localhost:8000/load/hired_employees -F "file=@data/hired_employees.csv"
 ```
 
 Metrics:
