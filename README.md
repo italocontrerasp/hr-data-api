@@ -2,6 +2,24 @@
 
 REST API to migrate historical HR data (departments, jobs, hired employees) into a relational database and expose hiring metrics. Built as a solution for the Globant Senior Data Engineer technical challenge.
 
+## Live deployment
+
+The API is deployed on Azure Container Apps (region `centralus`):
+
+**Base URL:** https://ca-hr-data-api-dev.kindisland-143838ff.centralus.azurecontainerapps.io
+
+**OpenAPI docs:** https://ca-hr-data-api-dev.kindisland-143838ff.centralus.azurecontainerapps.io/docs
+
+Historical CSVs are already loaded (12 departments, 183 jobs, 1929 hired employees — 70 rows rejected by validation, as expected for the noisy sample data).
+
+```bash
+BASE="https://ca-hr-data-api-dev.kindisland-143838ff.centralus.azurecontainerapps.io"
+
+curl "$BASE/health"
+curl "$BASE/metrics/hires-by-quarter?year=2021"
+curl "$BASE/metrics/departments-above-average?year=2021"
+```
+
 ## Stack
 
 - Python 3.11, FastAPI, Uvicorn
