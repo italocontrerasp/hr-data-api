@@ -1,12 +1,12 @@
 # hr-data-api
 
-REST API for the Globant Senior Data Engineer challenge. Loads historical HR data (departments, jobs, hired employees) into Postgres and exposes hiring metrics.
+API REST para el reto técnico de Senior Data Engineer de Globant. Carga datos históricos de RR.HH. (departamentos, puestos, empleados contratados) en Postgres y expone métricas de contratación.
 
 ## Live
 
 - **API:** https://ca-hr-data-api-dev.kindisland-143838ff.centralus.azurecontainerapps.io
 - **Swagger:** [`/docs`](https://ca-hr-data-api-dev.kindisland-143838ff.centralus.azurecontainerapps.io/docs)
-- Data loaded: 12 departments, 183 jobs, 1929 employees (70 rows rejected by validation).
+- Datos cargados: 12 departamentos, 183 puestos, 1929 empleados (70 filas rechazadas por validación).
 
 ```bash
 BASE="https://ca-hr-data-api-dev.kindisland-143838ff.centralus.azurecontainerapps.io"
@@ -14,65 +14,65 @@ curl "$BASE/metrics/hires-by-quarter?year=2021"
 curl "$BASE/metrics/departments-above-average?year=2021"
 ```
 
-## Architecture
+## Arquitectura
 
-### Application
+### Aplicación
 
-Layered FastAPI app. Each request flows top-down; the layers don't skip each other.
+App FastAPI por capas. Cada request fluye de arriba abajo; las capas no se saltan.
 
 ```
 HTTP request
     │
     ▼
 ┌─────────────┐
-│  routers/   │  FastAPI endpoints. Body limits (1-1000), path params.
+│  routers/   │  Endpoints FastAPI. Límites del body (1-1000), path params.
 └─────────────┘
     │
     ▼
 ┌─────────────┐
-│  schemas/   │  Pydantic v2. Per-row validation; bad rows rejected, good rows pass.
+│  schemas/   │  Pydantic v2. Validación por fila; las malas se rechazan, las buenas pasan.
 └─────────────┘
     │
     ▼
 ┌─────────────┐
-│  services/  │  Business logic: bulk insert, CSV streaming, SQL metrics.
+│  services/  │  Lógica de negocio: bulk insert, streaming de CSV, métricas en SQL.
 └─────────────┘
     │
     ▼
 ┌─────────────┐
-│  models/    │  SQLAlchemy 2 ORM → Postgres
+│  models/    │  ORM SQLAlchemy 2 → Postgres
 └─────────────┘
 ```
 
-### Deployment
+### Despliegue
 
 ```
-        push to main
+        push a main
              │
              ▼
    ┌──────────────────┐
-   │ GitHub Actions   │  ci.yml: pytest on Postgres service
-   │                  │  deploy.yml: alembic → docker build → push → revision
+   │ GitHub Actions   │  ci.yml: pytest sobre Postgres service
+   │                  │  deploy.yml: alembic → docker build → push → nueva revisión
    └──────────────────┘
              │
              ▼
    ┌──────────────────┐         ┌──────────────────────┐
    │ Azure Container  │ ──────► │ Postgres Flexible    │
    │ Registry (ACR)   │  pull   │ Server (B1ms)        │
-   └──────────────────┘  image  └──────────────────────┘
+   └──────────────────┘  imagen └──────────────────────┘
              │                            ▲
              ▼                            │ DATABASE_URL (secret)
    ┌──────────────────┐                   │
    │ Container Apps   │ ──────────────────┘
    │ scale-to-zero    │
-   │ HTTPS ingress    │
+   │ ingress HTTPS    │
    └──────────────────┘
              │
              ▼
-           public URL
+          URL pública
 ```
 
-Provisioned with `infra/terraform/`: RG, Postgres Flex, ACR, Container Apps Environment, Container App, Storage + Blob container (for CSV archival), Log Analytics.
+Provisionado con `infra/terraform/`: Resource Group, Postgres Flex, ACR, Container Apps Environment, Container App, Storage + Blob container (archival de CSVs), Log Analytics.
 
 ## Quick start (local)
 
@@ -84,19 +84,19 @@ alembic upgrade head
 uvicorn app.main:app --reload     # http://localhost:8000/docs
 ```
 
-`DATABASE_URL` defaults to the docker-compose Postgres; override via `.env`.
+`DATABASE_URL` apunta por defecto al Postgres del docker-compose; se sobreescribe con `.env`.
 
 ## Endpoints
 
-| Method | Path | Purpose |
+| Método | Ruta | Propósito |
 |---|---|---|
 | `GET` | `/health` | Liveness probe |
-| `POST` | `/departments`, `/jobs`, `/hired_employees` | Batch insert (1-1000 rows, JSON) |
-| `POST` | `/load/departments`, `/load/jobs`, `/load/hired_employees` | CSV upload (multipart, streamed in 1000-row chunks) |
-| `GET` | `/metrics/hires-by-quarter?year=2021` | Hires per quarter by department/job, ordered alphabetically |
-| `GET` | `/metrics/departments-above-average?year=2021` | Departments above the yearly average hires, ordered desc |
+| `POST` | `/departments`, `/jobs`, `/hired_employees` | Inserción por lote (1-1000 filas, JSON) |
+| `POST` | `/load/departments`, `/load/jobs`, `/load/hired_employees` | Subida de CSV (multipart, streamed en chunks de 1000 filas) |
+| `GET` | `/metrics/hires-by-quarter?year=2021` | Contrataciones por trimestre, por departamento/puesto, ordenadas alfabéticamente |
+| `GET` | `/metrics/departments-above-average?year=2021` | Departamentos por encima del promedio anual de contrataciones, ordenados desc |
 
-Batch endpoints validate row by row: bad rows are reported with `row_number` + `reason`, good rows are committed.
+Los endpoints de lote validan fila por fila: las filas inválidas se reportan con `row_number` + `reason`, las válidas se persisten.
 
 ## Tests
 
@@ -104,7 +104,7 @@ Batch endpoints validate row by row: bad rows are reported with `row_number` + `
 pytest -q
 ```
 
-13 tests against a real Postgres (`hr_data_test`). TRUNCATE between cases. CI runs the same suite against a Postgres service container.
+13 tests contra un Postgres real (`hr_data_test`). TRUNCATE entre casos. El CI corre el mismo suite contra un Postgres en service container.
 
 ## Infra
 
@@ -116,14 +116,14 @@ terraform output                    # api_url, acr_name, etc.
 terraform output db_admin_password  # sensitive
 ```
 
-GitHub Actions secrets required: `AZURE_CREDENTIALS`, `ACR_NAME`, `ACR_LOGIN_SERVER`, `AZURE_RESOURCE_GROUP`, `AZURE_CONTAINER_APP`, `DATABASE_URL`.
+Secrets requeridos en GitHub Actions: `AZURE_CREDENTIALS`, `ACR_NAME`, `ACR_LOGIN_SERVER`, `AZURE_RESOURCE_GROUP`, `AZURE_CONTAINER_APP`, `DATABASE_URL`.
 
-## Design decisions
+## Decisiones de diseño
 
-- **Sync FastAPI.** The workload is short batch inserts and SQL aggregations — async adds cognitive overhead with no I/O benefit here.
-- **Per-row validation.** One bad row doesn't kill the batch; clients see which rows failed and why.
-- **Metrics in SQL.** `COUNT(*) FILTER (...)`, `EXTRACT(QUARTER FROM ...)`, and a CTE keep work in the database, where it belongs.
-- **Schemas ≠ models.** Pydantic describes the HTTP contract; SQLAlchemy describes the table. They evolve independently.
-- **Postgres for tests, not SQLite.** The metric queries use Postgres-only features — SQLite tests would lie.
-- **Alembic for schema.** Versioned, replayable, applied by CI before each deploy. No `create_all()` shortcuts.
-- **Multi-stage Dockerfile, non-root user, HEALTHCHECK.** Migrations run in CI, not at container startup.
+- **FastAPI síncrono.** El workload son inserts cortos y agregaciones SQL — async sumaría complejidad sin beneficio de I/O acá.
+- **Validación por fila.** Una fila mala no tumba el batch; el cliente ve qué filas fallaron y por qué.
+- **Métricas en SQL.** `COUNT(*) FILTER (...)`, `EXTRACT(QUARTER FROM ...)` y un CTE mantienen el trabajo en la base de datos, donde corresponde.
+- **Schemas ≠ modelos.** Pydantic describe el contrato HTTP; SQLAlchemy describe la tabla. Evolucionan independientemente.
+- **Postgres para tests, no SQLite.** Las queries de métricas usan features exclusivas de Postgres — testear en SQLite mentiría.
+- **Alembic para el schema.** Versionado, reproducible, aplicado por el CI antes de cada deploy. Sin atajos con `create_all()`.
+- **Dockerfile multi-stage, usuario non-root, HEALTHCHECK.** Las migraciones corren en CI, no al arrancar el contenedor.
