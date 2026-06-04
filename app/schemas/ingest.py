@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, computed_field
 
 
 class DepartmentRow(BaseModel):
@@ -31,3 +31,13 @@ class RejectedRow(BaseModel):
 class BatchResponse(BaseModel):
     inserted: int
     rejected: list[RejectedRow]
+
+    @computed_field
+    @property
+    def rejected_count(self) -> int:
+        return len(self.rejected)
+
+    @computed_field
+    @property
+    def total(self) -> int:
+        return self.inserted + len(self.rejected)
