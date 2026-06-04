@@ -1,3 +1,3 @@
 project     = "hr-data-api"
 environment = "dev"
-location    = "eastus2"
+location    = "centralus"
